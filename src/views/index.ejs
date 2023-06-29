@@ -53,6 +53,7 @@
                 success: (response) => {
                     console.log(response);
 
+                    // se cer datele si se updateaza tabelul
                     const interval = setInterval(() => {
                         $.get({
                             url: '/readings',
@@ -64,6 +65,7 @@
                         });
                     }, 2000);
 
+                    // renuntam la asta at some point?
                     setTimeout(() => { clearInterval(interval); }, 10000);
                 },
             });

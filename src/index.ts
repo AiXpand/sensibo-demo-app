@@ -57,7 +57,7 @@ client.on(AiXpandClientEvent.AIXP_RECEIVED_HEARTBEAT_FROM_ENGINE, (data) => {
 let responses = 0;
 client.on(SENSIBO_SIGNATURE, (context, err, payload: SensiboPayload) => {
     console.log(payload);
-    readings.push(payload); // write to db
+    readings.push(payload); // TODO: write to db
 
     responses++;
     if(responses == 5) {
@@ -80,8 +80,9 @@ app.get('/', function (req: Request, res: Response) {
     res.render('views/index');
 });
 
+// ar trebui sa aiba o limita de date returnate?
 app.get('/readings', function (req: Request, res: Response) {
-    res.json(readings);  // read from db
+    res.json(readings);  // TODO: read from db
 });
 
 let commandSent = false;
@@ -93,8 +94,6 @@ app.post('/', bodyParser.json(), (req: Request, res: Response): void => {
         const pipeline = client
             .createPipeline(preferredNode, new SensiboCapture(req.body.device, req.body.apiKey))
             .attachPluginInstance(sensiboFactory.makePluginInstance('sensibo-demo'));
-
-        console.log('will deploy!');
 
         pipeline.deploy().then(
             (response: AiXPMessage<AiXPNotificationData>) => {
