@@ -1,0 +1,73 @@
+<html lang='en'>
+<head>
+    <title>Sensibo integration example</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js" integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g=" crossorigin="anonymous"></script>
+</head>
+<body>
+    <label for='device'>Sensor name:</label>
+    <input type='text' name='device' id='device'>
+    <label for='apiKey'>Password:</label>
+    <input type='text' name='apiKey' id='apiKey'>
+    <button name='connect' id='connect'>Connect!</button>
+
+    <table id='readings' style='padding: 5px'>
+        <tr><td>Temperature</td><td>Humidity</td><td>Date</td></tr>
+    </table>
+
+    <script>
+        function addDataToTable(data) {
+            var table = $('#readings');
+
+            // Clear the existing table contents
+            table.empty();
+
+            // Add the table header
+            var header = '<tr>' +
+                '<th>Temperature</th>' +
+                '<th>Humidity</th>' +
+                '<th>Date</th>' +
+                '</tr>';
+            table.append(header);
+
+            // Iterate over the data and append rows to the table
+            $.each(data, function(index, item) {
+                var row = '<tr>' +
+                    '<td>' + item.temperature + '</td>' +
+                    '<td>' + item.humidity + '</td>' +
+                    '<td>' + item.date + '</td>' +
+                    '</tr>';
+                table.append(row);
+            });
+        }
+
+        $('#connect').on('click', () => {
+            $.post({
+                url: '/',
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                data: JSON.stringify({
+                    "device": $('#device').val(),
+                    "apiKey": $('#apiKey').val(),
+                }),
+                success: (response) => {
+                    console.log(response);
+
+                    const interval = setInterval(() => {
+                        $.get({
+                            url: '/readings',
+                            contentType: 'application/json; charset=utf-8',
+                            dataType: 'json',
+                            success: (response) => {
+                                addDataToTable(response);
+                            },
+                        });
+                    }, 2000);
+
+                    setTimeout(() => { clearInterval(interval); }, 10000);
+                },
+            });
+        });
+    </script>
+</body>
+</html>
