@@ -13,15 +13,18 @@
     <input type='text' name='apiKey' id='apiKey'>
     <button name='connect' id='connect'>Connect!</button>
 
-    <div style='width: 400px; height: 300px;'>
+    <div style='width: 800px; height:600px;'>
         <canvas id='chart'></canvas>
     </div>
 
-    <table id='readings' style='padding: 5px'>
-        <tr><td>Temperature</td><td>Humidity</td><td>Date</td></tr>
-    </table>
+<!--    <table id='readings' style='padding: 5px'>-->
+<!--        <tr><td>Temperature</td><td>Humidity</td><td>Date</td></tr>-->
+<!--    </table>-->
 
     <script>
+        // Get the canvas element
+        const canvas = document.getElementById('chart');
+
         function addDataToTable(data) {
             var table = $('#readings');
 
@@ -77,10 +80,9 @@
             });
         });
 
-
+        let chart;
         function renderChart() {
-            // Get the canvas element
-            const canvas = document.getElementById('chart');
+
 
             // Make an AJAX request to fetch the dataset
             $.get('/readings', function(jsonData) {
@@ -100,8 +102,12 @@
 
                 console.log(temperatures, humidities, timestamps);
 
+                if (chart) {
+                    chart.destroy();
+                }
+
                 // Create the chart
-                const chart = new Chart(canvas, {
+                chart = new Chart(canvas, {
                     type: 'line',
                     data: {
                         labels: timestamps,
@@ -151,7 +157,7 @@
 
         $(function () {
             renderChart();
-            setTimeout(() => { renderChart(); }, 10000);
+            setInterval(() => { renderChart(); console.log('running') }, 10000);
         })
     </script>
 </body>
