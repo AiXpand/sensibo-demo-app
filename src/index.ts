@@ -102,7 +102,7 @@ app.get('/readings', function (req: Request, res: Response) {
         } else {
             res.json(rows);
         }
-    });
+    }, 15);
 });
 
 app.get('/chart', function (req: Request, res: Response) {

@@ -33,8 +33,8 @@ export class DatabaseManager {
         });
     }
 
-    public getAllReadings(callback: (error: Error | null, rows?: any[]) => void) {
-        const query = `SELECT * FROM readings`;
+    public getAllReadings(callback: (error: Error | null, rows?: any[]) => void, limit: number = 10) {
+        const query = `SELECT * FROM readings LIMIT ${limit}`;
         this.db.all(query, callback);
     }
 
