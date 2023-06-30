@@ -12,6 +12,7 @@ import {
 } from '@aixpand/client';
 import { BasicSensiboConfig, SENSIBO_SIGNATURE, SensiboPayload, SensiboPluginFactory } from './sensibo.plugin';
 import { SensiboCapture } from './sensibo.dct';
+import {DatabaseManager} from "./database/database.manager";
 
 dotenv.config();
 
@@ -43,6 +44,8 @@ const aixpOptions: AiXpandClientOptions = {
 const client = new AiXpandClient(aixpOptions);
 client.boot();
 
+const databaseManager = new DatabaseManager(path.join(__dirname, 'database.db'));
+
 let connectedToEngine = false;
 client.on(AiXpandClientEvent.AIXP_RECEIVED_HEARTBEAT_FROM_ENGINE, (data) => {
     if (data.executionEngine === preferredNode) {
@@ -56,8 +59,20 @@ client.on(AiXpandClientEvent.AIXP_RECEIVED_HEARTBEAT_FROM_ENGINE, (data) => {
 
 let responses = 0;
 client.on(SENSIBO_SIGNATURE, (context, err, payload: SensiboPayload) => {
-    console.log(payload);
-    readings.push(payload); // TODO: write to db
+    if (!err) {
+        const dateJson = JSON.parse(payload.date.replace(/'/g, '"'));
+        const readingDate = new Date(dateJson.time);
+        databaseManager.insertReading({
+            stream_id: context.pipeline.dct.id,
+            temperature: payload.temperature,
+            humidity: payload.humidity,
+            date: readingDate
+        }, (error) => {
+            if (error) {
+                console.error('Failed to insert reading into database:', error);
+            }
+        });
+    }
 
     responses++;
     if(responses == 5) {
@@ -71,18 +86,56 @@ client.on(SENSIBO_SIGNATURE, (context, err, payload: SensiboPayload) => {
 const app: Application = express();
 const PORT = process.env.APP_PORT;
 
-const readings = [];
-
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
 
 app.get('/', function (req: Request, res: Response) {
-    res.render('views/index');
+    res.render('index');
 });
 
 // ar trebui sa aiba o limita de date returnate?
 app.get('/readings', function (req: Request, res: Response) {
-    res.json(readings);  // TODO: read from db
+    databaseManager.getAllReadings((error, rows) => {
+        if (error) {
+            console.error('Failed to get readings from database:', error);
+            res.json([]);
+        } else {
+            res.json(rows);
+        }
+    });
+});
+
+app.get('/chart', function (req: Request, res: Response) {
+    databaseManager.getAllReadings((error, rows) => {
+        if (error) {
+            console.error('Failed to get readings from database:', error);
+            res.json([]);
+            return;
+        }
+
+        const jsonData = rows;
+        const temperatures = jsonData.map(entry => entry.temperature);
+        const humidity = jsonData.map(entry => entry.humidity);
+
+        const datasets = [
+            {
+                label: 'Temperature',
+                data: temperatures,
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            },
+            {
+                label: 'Humidity',
+                data: humidity,
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }
+        ];
+
+        res.json(datasets);
+    });
 });
 
 let commandSent = false;
